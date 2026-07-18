@@ -20,14 +20,22 @@ export const env = {
   nodeEnv: process.env.NODE_ENV || "development",
   port: Number(process.env.PORT || 5000),
   clientUrl: process.env.CLIENT_URL || "http://localhost:3000",
-  clientUrls: (process.env.CLIENT_URLS || process.env.CLIENT_URL || "http://localhost:3000,http://localhost:4028")
+  clientUrls: (
+    process.env.CLIENT_URLS ||
+    process.env.CLIENT_URL ||
+    "http://localhost:3000,http://localhost:4028,https://digitaladbird.com,https://www.digitaladbird.com"
+  )
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean),
   mongodbUri: process.env.MONGODB_URI || process.env.MONGO_URI || "mongodb://127.0.0.1:27017/courseforge",
   jwtSecret: process.env.JWT_SECRET || "replace-with-a-secret",
   mediaTokenSecret: process.env.MEDIA_TOKEN_SECRET || "replace-with-media-secret",
-  siteBaseUrl: process.env.SITE_BASE_URL || `http://localhost:${process.env.PORT || 5000}`,
+  siteBaseUrl:
+    process.env.SITE_BASE_URL ||
+    (process.env.NODE_ENV === "production"
+      ? "https://api.digitaladbird.com"
+      : `http://localhost:${process.env.PORT || 5000}`),
   smtpHost: process.env.SMTP_HOST || process.env.DEFAULT_SMTP_HOST || "",
   smtpPort: process.env.SMTP_PORT
     ? Number(process.env.SMTP_PORT)
