@@ -1,0 +1,23 @@
+export const WHATSAPP_PROVIDER = "AIWIZCHAT";
+
+export const WHATSAPP_MESSAGE_TYPES = {
+  PURCHASE_SUCCESS: "PURCHASE_SUCCESS",
+  CHECKOUT_ABANDONED: "CHECKOUT_ABANDONED",
+};
+
+export const WHATSAPP_MESSAGE_STATUSES = {
+  PENDING: "PENDING",
+  SENDING: "SENDING",
+  SENT: "SENT",
+  FAILED: "FAILED",
+  DEAD: "DEAD",
+  SKIPPED: "SKIPPED",
+};
+
+export const AIWIZCHAT_PROVIDER_STATUSES = {
+  ACCEPTED: "accepted",
+  SENT: "sent",
+  DELIVERED: "delivered",
+  READ: "read",
+  FAILED: "failed",
+};

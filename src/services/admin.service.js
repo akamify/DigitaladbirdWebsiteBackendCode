@@ -9,10 +9,12 @@ import Payment from "../models/Payment.js";
 import Progress from "../models/Progress.js";
 import Setting from "../models/Setting.js";
 import User from "../models/User.js";
+import WhatsAppMessageLog from "../models/WhatsAppMessageLog.js";
 import { env } from "../config/env.js";
 import AppError from "../utils/appError.js";
 import { buildStreamUrl, createAuditLog, findChapter, findLesson } from "./core.service.js";
 import { getPagination, toCsv, toSlug } from "../utils/common.js";
+import { WHATSAPP_MESSAGE_TYPES } from "../constants/whatsapp.constants.js";
 
 const serializeAdminCourse = (course, analytics = {}, userId = "admin") => ({
   id: course._id,
@@ -966,9 +968,51 @@ export const listUsers = async (query) => {
   };
 };
 
-export const listPayments = async () => ({
-  items: await Payment.find().populate("user", "name email").populate("course", "title slug").sort({ createdAt: -1 }).limit(100),
-});
+const summarizeWhatsAppLog = (log) =>
+  log
+    ? {
+        status: log.status,
+        providerStatus: log.providerStatus || null,
+        providerMessageId: log.providerMessageId || null,
+        sentAt: log.sentAt || null,
+        errorCode: log.errorCode || null,
+        errorMessage: log.errorMessage || null,
+        attempts: log.attempts || 0,
+      }
+    : null;
+
+export const listPayments = async () => {
+  const items = await Payment.find()
+    .populate("user", "name email")
+    .populate("course", "title slug")
+    .sort({ createdAt: -1 })
+    .limit(100)
+    .lean();
+
+  const logs = await WhatsAppMessageLog.find({
+    payment: { $in: items.map((payment) => payment._id) },
+  }).lean();
+
+  const logsByPayment = logs.reduce((accumulator, log) => {
+    const paymentId = log.payment.toString();
+    accumulator[paymentId] = accumulator[paymentId] || {};
+    accumulator[paymentId][log.type] = log;
+    return accumulator;
+  }, {});
+
+  return {
+    items: items.map((payment) => {
+      const paymentLogs = logsByPayment[payment._id.toString()] || {};
+      return {
+        ...payment,
+        whatsAppMessages: {
+          purchase: summarizeWhatsAppLog(paymentLogs[WHATSAPP_MESSAGE_TYPES.PURCHASE_SUCCESS]),
+          abandoned: summarizeWhatsAppLog(paymentLogs[WHATSAPP_MESSAGE_TYPES.CHECKOUT_ABANDONED]),
+        },
+      };
+    }),
+  };
+};
 
 export const listCoupons = async () => ({
   items: await Coupon.find({ deletedAt: null }).sort({ createdAt: -1 }),

@@ -10,6 +10,10 @@ const passwordSchema = z
 export const signupSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^\+?[0-9\s-]{10,16}$/, "Enter a valid phone number."),
   password: passwordSchema,
 });
 
@@ -31,5 +35,8 @@ export const updateProfileSchema = z.object({
   name: z.string().min(2).optional(),
   bio: z.string().max(500).optional(),
   avatarUrl: z.union([z.string().url(), z.literal("")]).optional(),
+  phone: z
+    .union([z.string().trim().regex(/^\+?[0-9\s-]{10,16}$/, "Enter a valid phone number."), z.literal("")])
+    .optional(),
 });
 
