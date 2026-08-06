@@ -19,7 +19,7 @@ export const optionalAuth = async (req, res, next) => {
 
   try {
     const payload = verifyAccessToken(token);
-    req.user = await User.findById(payload.sub).select("name email role avatarUrl bio isActive");
+    req.user = await User.findById(payload.sub).select("name email phone phoneNormalized role avatarUrl bio isActive");
   } catch {
     req.user = null;
   }
@@ -36,7 +36,7 @@ export const protect = async (req, res, next) => {
 
   try {
     const payload = verifyAccessToken(token);
-    const user = await User.findById(payload.sub).select("name email role avatarUrl bio isActive");
+    const user = await User.findById(payload.sub).select("name email phone phoneNormalized role avatarUrl bio isActive");
 
     if (!user || !user.isActive) {
       return res.status(401).json({ message: "Account is inactive or unavailable." });

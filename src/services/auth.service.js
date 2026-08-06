@@ -6,28 +6,37 @@ import { env } from "../config/env.js";
 import AppError from "../utils/appError.js";
 import { signAccessToken } from "../utils/jwt.js";
 import { buildResetEmail, sendEmail } from "../utils/email.js";
+import { maskPhone, normalizePhone } from "../utils/phone.js";
 import { createAuditLog, randomToken } from "./core.service.js";
 
 const serializeUser = (user) => ({
   id: user._id,
   name: user.name,
   email: user.email,
+  phone: user.phone,
   role: user.role,
   avatarUrl: user.avatarUrl,
   bio: user.bio,
   createdAt: user.createdAt,
 });
 
-export const signup = async ({ name, email, password }) => {
+export const signup = async ({ name, email, phone, password }) => {
   const existingUser = await User.findOne({ email: email.toLowerCase() });
 
   if (existingUser) {
     throw new AppError(409, "An account with this email already exists.");
   }
 
+  const phoneNormalized = normalizePhone(phone);
+  if (!phoneNormalized) {
+    throw new AppError(400, "Enter a valid phone number.");
+  }
+
   const user = await User.create({
     name,
     email: email.toLowerCase(),
+    phone,
+    phoneNormalized,
     password: await bcrypt.hash(password, 10),
   });
 
@@ -92,6 +101,11 @@ export const me = async (userId) => {
 };
 
 export const updateProfile = async (userId, payload) => {
+  const phoneNormalized = payload.phone !== undefined && payload.phone !== "" ? normalizePhone(payload.phone) : null;
+  if (payload.phone && !phoneNormalized) {
+    throw new AppError(400, "Enter a valid phone number.");
+  }
+
   const user = await User.findByIdAndUpdate(
     userId,
     {
@@ -99,6 +113,7 @@ export const updateProfile = async (userId, payload) => {
         ...(payload.name ? { name: payload.name } : {}),
         ...(payload.bio !== undefined ? { bio: payload.bio } : {}),
         ...(payload.avatarUrl !== undefined ? { avatarUrl: payload.avatarUrl || null } : {}),
+        ...(payload.phone !== undefined ? { phone: payload.phone || null, phoneNormalized } : {}),
       },
     },
     { new: true },
@@ -109,7 +124,10 @@ export const updateProfile = async (userId, payload) => {
     action: "auth.profile.updated",
     entityType: "user",
     entityId: user._id.toString(),
-    details: payload,
+    details: {
+      ...payload,
+      ...(payload.phone !== undefined ? { phone: payload.phone ? maskPhone(payload.phone) : null } : {}),
+    },
   });
 
   return {

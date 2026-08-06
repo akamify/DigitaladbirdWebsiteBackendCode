@@ -18,6 +18,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    phone: {
+      type: String,
+      trim: true,
+    },
+    phoneNormalized: {
+      type: String,
+      trim: true,
+    },
     role: {
       type: String,
       enum: ["SUPER_ADMIN", "ADMIN", "INSTRUCTOR", "USER"],
@@ -36,6 +44,8 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
+
+userSchema.index({ phoneNormalized: 1 }, { sparse: true });
 
 export default mongoose.model("User", userSchema);
 

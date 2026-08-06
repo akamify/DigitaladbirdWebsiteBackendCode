@@ -11,6 +11,25 @@ import { buildEnrollmentEmail, sendEmail } from "../utils/email.js";
 import { buildCourseSummary, createAuditLog, createNotification, loadCouponByCode, validateCouponForCourse } from "./core.service.js";
 import { amountLabel } from "./core.service.js";
 import { buildInvoiceNumber, buildOrderNumber, matchesPublishedState } from "../utils/common.js";
+import { sendPurchaseSuccessWhatsApp } from "./whatsappNotification.service.js";
+
+const dispatchPurchaseWhatsApp = ({ payment, course, user }) => {
+  if (!payment || !course || !user) {
+    return;
+  }
+
+  void sendPurchaseSuccessWhatsApp({ payment, course, user }).catch((error) => {
+    console.error(
+      JSON.stringify({
+        event: "whatsapp.purchase.dispatch_failed",
+        paymentId: payment._id?.toString(),
+        courseId: course._id?.toString(),
+        userId: user._id?.toString(),
+        errorMessage: error?.message || "WhatsApp dispatch failed.",
+      }),
+    );
+  });
+};
 
 const markEnrollmentPaid = async ({ payment, course, user }) => {
   const enrollment = await Enrollment.findOneAndUpdate(
@@ -68,6 +87,8 @@ const markEnrollmentPaid = async ({ payment, course, user }) => {
       amountLabel: amountLabel(payment.totalAmount, payment.currency),
     }),
   });
+
+  dispatchPurchaseWhatsApp({ payment, course, user });
 
   return enrollment;
 };
@@ -218,6 +239,9 @@ export const verifyPayment = async ({ payload, user }) => {
   }
 
   if (payment.status === "PAID") {
+    const [course, fullUser] = await Promise.all([Course.findById(payment.course), User.findById(payment.user)]);
+    dispatchPurchaseWhatsApp({ payment, course, user: fullUser });
+
     return {
       message: "Payment already verified.",
       payment,

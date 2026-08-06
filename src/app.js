@@ -11,6 +11,7 @@ import studentRoutes from "./routes/student.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import mediaRoutes from "./routes/media.routes.js";
+import pricingCheckoutRoutes from "./routes/pricingCheckout.routes.js";
 
 const app = express();
 
@@ -53,6 +54,7 @@ app.use("/api/student", studentRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/media", mediaRoutes);
+app.use("/api/pricing-checkouts", pricingCheckoutRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
